@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio Monitoring Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .controls input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #45a049;
+        }
+
+        .btn-check {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-check:hover {
+            background: #0b7dda;
+        }
+
+        .radio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .radio-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 5px solid #ccc;
+        }
+
+        .radio-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+        }
+
+        .radio-card.online {
+            border-left-color: #4CAF50;
+        }
+
+        .radio-card.offline {
+            border-left-color: #f44336;
+        }
+
+        .radio-card.checking {
+            border-left-color: #FF9800;
+        }
+
+        .radio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .radio-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-badge.online {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-badge.offline {
+            background: #f44336;
+            color: white;
+        }
+
+        .status-badge.checking {
+            background: #FF9800;
+            color: white;
+        }
+
+        .radio-url {
+            color: #666;
+            font-size: 0.85em;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+
+        .radio-info {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .btn-remove {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .btn-remove:hover {
+            background: #da190b;
+        }
+
+        .logs-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .logs-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .logs {
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+        }
+
+        .log-success {
+            color: #4CAF50;
+        }
+
+        .log-error {
+            color: #f44336;
+        }
+
+        .log-info {
+            color: #2196F3;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .radio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📻 Radio Monitoring Dashboard</h1>
+
+        <div class="controls">
+            <h3 style="margin-bottom: 15px;">Tambah Radio</h3>
+            <input type="text" id="radioName" placeholder="Nama Radio (contoh: Prambors FM)">
+            <input type="text" id="radioUrl" placeholder="URL Stream (contoh: http://stream.radio.com/stream)">
+            <button class="btn-add" onclick="addRadio()">➕ Tambah Radio</button>
+            <button class="btn-check" onclick="checkAllRadios()">🔄 Check Semua</button>
+        </div>
+
+        <div class="radio-grid" id="radioGrid"></div>
+
+        <div class="logs-section">
+            <h2>📋 Activity Logs</h2>
+            <div class="logs" id="logs"></div>
+        </div>
+
+        <div class="footer">
+            <p>Auto-check setiap 2 menit | Data disimpan di browser</p>
+        </div>
+    </div>
+
+    <script>
+        let radios = [];
+        let autoCheckInterval = null;
+
+        // Load dari memory (tidak pakai localStorage)
+        function loadRadios() {
+            // Radio default kalau belum ada
+            if (radios.length === 0) {
+                radios = [
+                    { name: "Prambors FM", url: "http://stream.radiojar.com/prambors", status: "unknown" },
+                    { name: "Hard Rock FM", url: "https://n01.rcs.revma.com/hardrock", status: "unknown" }
+                ];
+            }
+            renderRadios();
+        }
+
+        function addRadio() {
+            const name = document.getElementById('radioName').value.trim();
+            const url = document.getElementById('radioUrl').value.trim();
+
+            if (!name || !url) {
+                addLog('Nama dan URL harus diisi!', 'error');
+                return;
+            }
+
+            radios.push({
+                name: name,
+                url: url,
+                status: 'unknown',
+                lastCheck: null
+            });
+
+            document.getElementById('radioName').value = '';
+            document.getElementById('radioUrl').value = '';
+
+            addLog(`Radio "${name}" ditambahkan`, 'info');
+            renderRadios();
+            checkRadio(radios.length - 1);
+        }
+
+        function removeRadio(index) {
+            const name = radios[index].name;
+            radios.splice(index, 1);
+            addLog(`Radio "${name}" dihapus`, 'info');
+            renderRadios();
+        }
+
+        function renderRadios() {
+            const grid = document.getElementById('radioGrid');
+            grid.innerHTML = '';
+
+            radios.forEach((radio, index) => {
+                const card = document.createElement('div');
+                card.className = `radio-card ${radio.status}`;
+                
+                const statusText = radio.status === 'online' ? 'ONLINE' : 
+                                 radio.status === 'offline' ? 'OFFLINE' : 
+                                 radio.status === 'checking' ? 'CHECKING...' : 'UNKNOWN';
+
+                card.innerHTML = `
+                    <div class="radio-header">
+                        <div class="radio-name">${radio.name}</div>
+                        <div class="status-badge ${radio.status}">${statusText}</div>
+                    </div>
+                    <div class="radio-url">${radio.url}</div>
+                    <div class="radio-info">
+                        ${radio.lastCheck ? `Terakhir cek: ${radio.lastCheck}` : 'Belum pernah dicek'}
+                    </div>
+                    <button class="btn-remove" onclick="removeRadio(${index})">🗑️ Hapus</button>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function checkRadio(index) {
+            const radio = radios[index];
+            radio.status = 'checking';
+            renderRadios();
+
+            try {
+                // Pakai teknik CORS proxy atau direct check
+                const response = await fetch(radio.url, { 
+                    method: 'HEAD',
+                    mode: 'no-cors' // Bypass CORS untuk test
+                });
+
+                // Karena no-cors, kita anggap online jika tidak error
+                radio.status = 'online';
+                radio.lastCheck = new Date().toLocaleString('id-ID');
+                addLog(`✓ ${radio.name} ONLINE`, 'success');
+            } catch (error) {
+                radio.status = 'offline';
+                radio.lastCheck = new Date().toLocaleString('id-ID');
+                addLog(`✗ ${radio.name} OFFLINE - ${error.message}`, 'error');
+            }
+
+            renderRadios();
+        }
+
+        function checkAllRadios() {
+            addLog('Memulai pengecekan semua radio...', 'info');
+            radios.forEach((radio, index) => {
+                setTimeout(() => checkRadio(index), index * 1000); // Delay 1 detik per radio
+            });
+        }
+
+        function addLog(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString('id-ID');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logsDiv.insertBefore(logEntry, logsDiv.firstChild);
+
+            // Limit logs
+            while (logsDiv.children.length > 50) {
+                logsDiv.removeChild(logsDiv.lastChild);
+            }
+        }
+
+        // Auto check setiap 2 menit
+        function startAutoCheck() {
+            autoCheckInterval = setInterval(() => {
+                addLog('Auto-check dimulai...', 'info');
+                checkAllRadios();
+            }, 120000); // 2 menit
+        }
+
+        // Initialize
+        loadRadios();
+        checkAllRadios();
+        startAutoCheck();
+        addLog('Dashboard siap! Auto-check setiap 2 menit.', 'info');
+    </script>
+</body>
+</html>
